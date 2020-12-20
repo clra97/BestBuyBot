@@ -8,12 +8,17 @@ avail = False
 scraper = CardScrapper()
 
 while avail == False:
+    #Retreives html from URL
     scraper.prepareSoup(url, headers)
 
+    #Clears the startup status messages
     scraper.clearScreen()
 
+    #Create a dictionary of GPUs from the site
     scraper.createGPUDict()
 
+    #Traverses GPU dictionary and checks whether the product is available
     avail = scraper.checkGPUList()
 
+    #Wait to reqeust data again
     scraper.sleep()

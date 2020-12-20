@@ -2,6 +2,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import time
+import queue
+import validator as val
 
 class CardScrapper:
 
@@ -16,12 +18,9 @@ class CardScrapper:
         self._soup = None               #beautifulsoup object
 #---Used-for-Dictionary----------------------------
         self._gpuDictList = []          #List of GPU Dictionaries
-        self._gpuDict = {}              #Dictionary of GPU
         self._gpuInstockList = []        #In-stock GPUs
-        self._gpuDictName = None        #GPU Name
-        self._gpuDictURL = None         #GPU URL
-        self._gpuDictPrice = None       #GPU Price
-        self._gpuDictInstock = False    #GPU Avail
+#---Used for threading-----------------------------
+        self._listQueue = None              #Queue used to give jobs to threads
 #---Used-for-Messages------------------------------
         self._message = "Card Scraper Ready\n"  #message first displayed
         print(self._message)                    #prints message
@@ -36,12 +35,14 @@ class CardScrapper:
     #one method to complete handshake and make soup to scrape
     def prepareSoup(self, url, headers):
         self.printInstock()
-        self.url = self.genURL(url) #creates URL to connect
-        self.headers = headers #use headers provided
+        self.url = self.genURL(url)     #creates URL to connect
+        self.headers = headers          #use headers provided
+        self.listQueue = queue.Queue()  #Instantiates the job queue for threads
 
-        self.handshake() #request connection
-        self.makeSoup()   #create soup from connection to parse
-    #request website in while loop 
+        self.handshake()                #request connection
+        self.makeSoup()                 #create soup from connection to parse
+
+    #request website in while loop
     def handshake(self):
         response = False
 
@@ -55,6 +56,7 @@ class CardScrapper:
             except:
                 print("{} - There was an error connecting!\nTry again!\n".format(self.site)) #prints status code
                 time.sleep(self.timeout)
+
     #create beautifulsoup with try and except
     def makeSoup(self):
         response = False #used to break loop to connect
@@ -73,7 +75,6 @@ class CardScrapper:
                 print("There was an error making soup!\nTry again!\n")
                 time.sleep(self.timeout)
 
-#---create-gpuDict---------------------------------
     #create GPU Dictionary by scraping text off link
     def createGPUDict(self):
         for item in self.soup.find_all('li', "sku-item"):               #find List of GPUs on search
@@ -81,18 +82,21 @@ class CardScrapper:
 
                 self.gpuDictName = link.text                            #capture Name of GPU
                 self.gpuDictURL = link.get('href')                      #capture URL of GPU
-                
+
                 self.gpuDict = { 'name' : self.gpuDictName,             #append name
                                  'url' : self.gpuDictURL,               #append URL
-                                 'price' : self.gpuDictPrice,           #append Price (Default Value) 
+                                 'price' : self.gpuDictPrice,           #append Price (Default Value)
                                  'in-stock' : self.gpuDictInstock }          #append Avail (Default Value)
 
                 self.appendGPUDict(self.gpuDict)                        #append Dictionary to List of GPUs
+                self.listQueue.put(self.gpuDict)                        #Add dictionary to queue
+
     #append dictionary created from function to list
     def appendGPUDict(self, gpuDict):
         self.gpuDictList.append(gpuDict) #appends to list
 
     def checkGPUList(self):
+
         for items in self.gpuDictList:
             name = items['name']
             url = items['url']
@@ -117,39 +121,6 @@ class CardScrapper:
             self.printInstock()
 
         return False
-    #checks page for specific text on price of GPU and then returns it
-    def checkPrice(self):
-        self.gpuDictPrice = self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
-        return self.gpuDictPrice
-    #checks if specific card 
-    def checkInstock(self):
-        button = self.soup.find('div', 'fulfillment-add-to-cart-button').find('button').text
-        
-        if button == 'Sold Out':# or 'Coming Soon':
-            return False
-        else:
-            return True
-
-    def addInstock(self, items):
-        if items in self.gpuInstockList:
-            self.printInstock()
-        else:
-            self.gpuInstockList.append(items)
-            self.printInstock()
-
-    def printInstock(self):
-        self.clearScreen()
-        if len(self._gpuInstockList) > 0:
-            print("Available:\n")
-            for items in self.gpuInstockList:
-                print("{}\n".format(items['name'])
-                     +"Link: {}\n".format(self.genURL(items['url'])))
-        else:
-            pass
-
-    def sleep(self):
-        print("Will Continue in 1 minute...\n")
-        time.sleep(60)
 
     def printFinalDict(self):
         for items in self.gpuDict.items():
@@ -199,6 +170,10 @@ class CardScrapper:
     @property
     def gpuDictInstock(self):
         return self._gpuDictInstock
+#---Queue-Getter-----------------------------------
+    @property
+    def listQueue(self):
+        return self._listQueue
 #---Message-Getter---------------------------------
     @property
     def message(self):
@@ -242,6 +217,10 @@ class CardScrapper:
     @gpuDictInstock.setter
     def gpuDictAvail(self, gpuDictInstock):
         self._gpuDictAvail = gpuDictInstock
+#---Queue-Setter-----------------------------------
+    @listQueue.setter
+    def listQueue(self, listQueue):
+        self._listQueue = listQueue
 #---Message-Setters--------------------------------
     @message.setter
     def message(self, message):
@@ -285,6 +264,10 @@ class CardScrapper:
     @gpuDictInstock.deleter
     def gpuDictInstock(self):
         self._gpuDictInstock = False
+#---Queue-Deleter-----------------------------------
+    @listQueue.deleter
+    def listQueue(self):
+        self._listQueue = None
 #---Message-Deleters-------------------------------
     @message.deleter
     def message(self):
