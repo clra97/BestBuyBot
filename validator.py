@@ -247,5 +247,5 @@ class GPUValidator(threading.Thread):
         self.gpuQueue = gpuQueue
         self.number = number
 
-    def run():
-        print("Hello, I am ", number)
+    def run(self):
+        print("Hello, I am ", self.number)

@@ -81,7 +81,7 @@ class CardScrapper:
     def makeWorkers(self):
         for i in range(self.threadLimit):
             worker = val.GPUValidator(self.listQueue, i)
-            self.threadList().put(worker)
+            self.threadList.append(worker)
             worker.start()
 
     # create GPU Dictionary by scraping text off link
@@ -130,6 +130,10 @@ class CardScrapper:
             self.printInstock()
 
         return False
+
+    def sleep(self):
+        print("Will Continue in 1 minute...\n")
+        time.sleep(60)
 
     def printFinalDict(self):
         for items in self.gpuDict.items():
