@@ -14,11 +14,15 @@ while avail == False:
     #Clears the startup status messages
     scraper.clearScreen()
 
-    #Create a dictionary of GPUs from the site
-    scraper.createGPUDict()
+    # Create worker threads and start them
+    scraper.makeWorkers()
 
+    #Create a dictionary of GPUs from the site
+    scraper.createGPUList()
+
+    print(scraper.listQueue)
     #Traverses GPU dictionary and checks whether the product is available
-    avail = scraper.checkGPUList()
+    #avail = scraper.checkGPUList()
 
     #Wait to reqeust data again
     scraper.sleep()

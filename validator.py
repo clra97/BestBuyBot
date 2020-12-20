@@ -79,22 +79,6 @@ class GPUListing():
                 print("There was an error making soup!\nTry again!\n")
                 time.sleep(self.timeout)
 
-    #create GPU Dictionary by scraping text off link
-    def createGPUDict(self):
-        for item in self.soup.find_all('li', "sku-item"):               #find List of GPUs on search
-            for link in item.find(class_='sku-header'):                 #once found go through each GPU
-
-                self.gpuDictName = link.text                            #capture Name of GPU
-                self.gpuDictURL = link.get('href')                      #capture URL of GPU
-
-                self.gpuDict = { 'name' : self.gpuDictName,             #append name
-                                 'url' : self.gpuDictURL,               #append URL
-                                 'price' : self.gpuDictPrice,           #append Price (Default Value)
-                                 'in-stock' : self.gpuDictInstock }          #append Avail (Default Value)
-
-                self.appendGPUDict(self.gpuDict)                        #append Dictionary to List of GPUs
-                self.listQueue.put(self.gpuDict)                        #Add dictionary to queue
-
     #checks page for specific text on price of GPU and then returns it
     def checkPrice(self):
         self.gpuDictPrice = self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
@@ -259,3 +243,9 @@ class GPUListing():
 class GPUValidator(threading.Thread):
 
     def __init__(self, gpuQueue, number):
+        super().__init__()
+        self.gpuQueue = gpuQueue
+        self.number = number
+
+    def run():
+        print("Hello, I am ", number)
