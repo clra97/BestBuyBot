@@ -106,7 +106,7 @@ class GPUListing():
     def checkInstock(self):
         button = self.soup.find('div', 'fulfillment-add-to-cart-button').find('button').text
 
-        if button == 'Sold Out':# or 'Coming Soon':
+        if button == 'Sold Out' or button == 'Coming Soon':
             return False
         else:
             return True
