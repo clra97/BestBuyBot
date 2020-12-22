@@ -30,7 +30,9 @@ class GPUListing():
         print(self._message)                    #prints message
 
 #---Functions--------------------------------------
-
+    #used to create proper URLs for ease later on
+    def genURL(self, url):
+        return "https://www.bestbuy.com{}".format(url)
 #---Connection-------------------------------------
 
     #one method to complete handshake and make soup to scrape
@@ -38,7 +40,7 @@ class GPUListing():
         self.gpuDict = listing
 
         #self.printInstock()
-        self.url = self.gpuDict['url']  #sets the url to scrape
+        self.url = self.genURL(self.gpuDict['url'])  #sets the url to scrape
         self.headers = headers          #use headers provided
 
         self.handshake()                #request connection
@@ -48,18 +50,18 @@ class GPUListing():
     def handshake(self):
         response = False
 
-        print(threading.current_thread().number + " job: " + self.gpuDict)
+        print(threading.current_thread().number, " job: ", self.gpuDict)
 
-        while response == False: #while loop to try requesting website
-            try: #used incase of errors
-                self.site = requests.get(self.url,            #url
-                                         headers=self.headers,#headers
-                                         timeout=self.timeout)#timeout (10 seconds)
-                print("{} - Successful!\n".format(self.site)) #prints status code: 200 = good
-                response = True #breaks loop
-            except:
-                print("{} - There was an error connecting!\nTry again!\n".format(self.site)) #prints status code
-                time.sleep(self.timeout)
+        #while response == False: #while loop to try requesting website
+        try: #used incase of errors
+            self.site = requests.get(self.url,            #url
+                                     headers=self.headers,#headers
+                                     timeout=self.timeout)#timeout (10 seconds)
+            print("{} - Successful!\n".format(self.site)) #prints status code: 200 = good
+            response = True #breaks loop
+        except:
+            print(threading.current_thread().number, ": {} - There was an error connecting!\nTry again!\n".format(self.site)) #prints status code
+            time.sleep(self.timeout)
 
     #create beautifulsoup with try and except
     def makeSoup(self):
@@ -67,19 +69,19 @@ class GPUListing():
 
         print("Creating Soup...\n") #message to let user know processing
 
-        while response == False: #while loop to try creating soup
-            try: #used in case of errors
-                self.soup = BeautifulSoup(self.site.content, #creates BeautifulSoup Object from request
-                                         'lxml')             #parses with lxml library (Fastest)
+        #while response == False: #while loop to try creating soup
+        try: #used in case of errors
+            self.soup = BeautifulSoup(self.site.content, #creates BeautifulSoup Object from request
+                                     'lxml')             #parses with lxml library (Fastest)
 
-                print("Successful!\n")
+            print("Successful!\n")
 
-                response = True #will break loop
-            except:
-                print("There was an error making soup!\nTry again!\n")
-                time.sleep(self.timeout)
+            response = True #will break loop
+        except:
+            print("There was an error making soup!\nTry again!\n")
+            time.sleep(self.timeout)
 
-    def checkAvail(self):
+    def checkAvail(self, inStockList):
         global avail
         #Get the dictionary of the current GPU listing
         gpu = self.gpuDict
@@ -90,11 +92,11 @@ class GPUListing():
 
         #Chech if the GPU is in stock
         if gpu['in-stock'] == True:
-            self.addInstock(gpu)
+            self.addInstock(gpu, inStockList)
             if gpu['name'] == "NVIDIA GeForce RTX 3080 10GB GDDR6X PCI Express 4.0 Graphics Card - Titanium and Black":
                 avail = True
         else:
-            print(threading.current_thread().number + ": Not In-Stock...\n")
+            print(threading.current_thread().number, ": Not In-Stock...\n")
             time.sleep(self.wait)
 
         avail = False
@@ -103,6 +105,7 @@ class GPUListing():
     def checkPrice(self):
         self.gpuDictPrice = self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
         return self.gpuDictPrice
+
     #checks if specific card
     def checkInstock(self):
         button = self.soup.find('div', 'fulfillment-add-to-cart-button').find('button').text
@@ -112,13 +115,14 @@ class GPUListing():
         else:
             return True
 
-    def addInstock(self, items):
+    def addInstock(self, items, inStockList):
         lock = threading.Lock()
+        lock.acquire()
 
-        if items not in self.gpuInstockList:
-            lock.aquire()
-            self.gpuInstockList.append(items)
-            lock.release()
+        if items not in inStockList:
+            inStockList.append(items)
+
+        lock.release()
 
     def sleep(self):
         print("Will Continue in 1 minute...\n")
@@ -253,9 +257,10 @@ class GPUListing():
 #Reimplementation of threading class to check the listing of a GPU
 class GPUValidator(threading.Thread):
 
-    def __init__(self, headers, gpuQueue, number):
+    def __init__(self, gpuQueue, inStockList, headers, number):
         super().__init__()
         self.listing = GPUListing()
+        self.inStockList = inStockList
         self.headers = headers
         self.gpuQueue = gpuQueue
         self.number = number
@@ -263,18 +268,27 @@ class GPUValidator(threading.Thread):
     def run(self):
         print("Starting thread: ", self.number)
 
-        #Get the job from the given queue
-        gpu = self.gpuQueue.get()
-        #Tells that the thread is done with the queue
-        self.gpuQueue.task_done()
+        while not self.gpuQueue.empty():
+            try:
+                #Get the job from the given queue
+                gpu = self.gpuQueue.get(timeout=self.listing.timeout)
+            except queue.Empty:
+                #If the queue is empty, the thread exits
+                print("Queue is empty")
+                return 0
 
-        print(self.number, " got job from Queue")
+            #Tells that the thread is done with the queue
+            self.gpuQueue.task_done()
 
-        #Attempt to make connection and retreive html
-        #Should give up control to another thread
-        self.listing.prepareSoup(gpu, self.headers)
+            print(self.number, " got job from Queue")
 
-        print("Thread: ", self.number, " prepared")
+            #Attempt to make connection and retreive html
+            #Should give up control to another thread
+            self.listing.prepareSoup(gpu, self.headers)
 
-        #Set the price of the gpu if it's available
-        self.listing.checkAvail()
+            print("Thread: ", self.number, " prepared")
+
+            #Set the price of the gpu if it's available
+            self.listing.checkAvail(self.inStockList)
+
+        return 1

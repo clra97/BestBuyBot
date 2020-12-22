@@ -22,7 +22,6 @@ class CardScrapper:
 #---Used for threading-----------------------------
         self._threadLimit = 8           #Maximum Number of threads
         self._listQueue = None          #Queue used to give jobs to threads
-        self._threadList = []           #List of threads
 #---Used-for-Messages------------------------------
         self._message = "Card Scraper Ready\n"  #message first displayed
         print(self._message)                    #prints message
@@ -80,8 +79,7 @@ class CardScrapper:
     # Create worker threads and start them
     def makeWorkers(self):
         for i in range(self.threadLimit):
-            worker = val.GPUValidator(self.headers, self.listQueue, i)
-            self.threadList.append(worker)
+            worker = val.GPUValidator(self.listQueue, self.gpuInstockList, self.headers, i)
             worker.start()
 
     # create GPU Dictionary by scraping text off link
