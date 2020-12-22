@@ -90,6 +90,9 @@ class CardScrapper:
                 name = link.text                            #capture Name of GPU
                 url = link.get('href')                      #capture URL of GPU
 
+                if url == None:
+                    continue
+
                 gpuDict = { 'name' : name,                 #append name
                             'url' : url,                   #append URL
                             'price' : None,                #append Price (Default Value)
@@ -101,33 +104,6 @@ class CardScrapper:
     #append dictionary created from function to list
     def appendGPUDict(self, gpuDict):
         self.gpuDictList.append(gpuDict) #appends to list
-
-    def checkGPUList(self):
-
-        for items in self.gpuDictList:
-            name = items['name']
-            url = items['url']
-
-            self.prepareSoup(url, self.headers)
-
-            items['price'] = self.checkPrice()
-            items['in-stock'] = self.checkInstock()
-
-            if items['in-stock'] == True:
-                self.addInstock(items)
-                if name == "NVIDIA GeForce RTX 3080 10GB GDDR6X PCI Express 4.0 Graphics Card - Titanium and Black":
-                    return True
-                else:
-                    time.sleep(self.wait)
-                    pass
-            else:
-                print("Not In-Stock...\n")
-                time.sleep(self.wait)
-                pass
-
-            self.printInstock()
-
-        return False
 
     def printInstock(self):
         self.clearScreen()

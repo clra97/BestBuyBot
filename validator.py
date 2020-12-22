@@ -19,10 +19,6 @@ class GPUListing():
         self._soup = None               #beautifulsoup object
 #---Used-for-Dictionary----------------------------
         self._gpuDict = {}              #Dictionary of GPU
-        self._gpuDictName = None        #GPU Name
-        self._gpuDictURL = None         #GPU URL
-        self._gpuDictPrice = None       #GPU Price
-        self._gpuDictInstock = False    #GPU Avail
 #---Used for threading-----------------------------
         self._listQueue = None              #Queue used to give jobs to threads
 #---Used-for-Messages------------------------------

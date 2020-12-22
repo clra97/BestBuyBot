@@ -8,33 +8,35 @@ avail = False
 
 scraper = CardScrapper()
 
-#while avail == False:
-#Retreives html from URL
-scraper.prepareSoup(url, headers)
+while avail == False:
 
-#Clears the startup status messages
-scraper.clearScreen()
+    start_time = time.time()
 
-#Create a dictionary of GPUs from the site
-scraper.createGPUList()
+    #Retreives html from URL
+    scraper.prepareSoup(url, headers)
 
-# Create worker threads and start them
-scraper.makeWorkers()
+    #Clears the startup status messages
+    scraper.clearScreen()
 
-#Traverses GPU dictionary and checks whether the product is available
-#avail = scraper.checkGPUList()
+    #Create a dictionary of GPUs from the site
+    scraper.createGPUList()
 
-#Waits until all threads have completed their task
-#scraper.listQueue.join()
-main_thread = threading.current_thread()
-for t in threading.enumerate():
-    if t is main_thread:
-        continue
-    print("joining %s", t.getName())
-    t.join()
+    # Create worker threads and start them
+    scraper.makeWorkers()
 
-#Print the in stock GPUs
-scraper.printInstock()
+    #Waits until all threads have completed their task
+    #scraper.listQueue.join()
+    main_thread = threading.current_thread()
+    for t in threading.enumerate():
+        if t is main_thread:
+            continue
+        print("joining ", t.getName())
+        t.join()
 
-#Wait to reqeust data again
-scraper.sleep()
+    #Print the in stock GPUs
+    scraper.printInstock()
+
+    print("Program took: ", (time.time() - start_time))
+
+    #Wait to reqeust data again
+    scraper.sleep()
