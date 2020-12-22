@@ -80,7 +80,7 @@ class CardScrapper:
     # Create worker threads and start them
     def makeWorkers(self):
         for i in range(self.threadLimit):
-            worker = val.GPUValidator(self.listQueue, i)
+            worker = val.GPUValidator(self.headers, self.listQueue, i)
             self.threadList.append(worker)
             worker.start()
 
@@ -130,6 +130,14 @@ class CardScrapper:
             self.printInstock()
 
         return False
+
+    def printInstock(self):
+        self.clearScreen()
+        if len(self._gpuInstockList) > 0:
+            print("Available:\n")
+            for items in self.gpuInstockList:
+                print("{}\n".format(items['name'])
+                     +"Link: {}\n".format(self.genURL(items['url'])))
 
     def sleep(self):
         print("Will Continue in 1 minute...\n")

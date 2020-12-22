@@ -20,9 +20,14 @@ while avail == False:
     #Create a dictionary of GPUs from the site
     scraper.createGPUList()
 
-    print(scraper.listQueue)
     #Traverses GPU dictionary and checks whether the product is available
     #avail = scraper.checkGPUList()
+
+    #Waits until all threads have completed their task
+    scraper.listQueue.join()
+
+    #Print the in stock GPUs
+    scraper.printInstock()
 
     #Wait to reqeust data again
     scraper.sleep()

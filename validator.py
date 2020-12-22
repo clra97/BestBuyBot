@@ -30,18 +30,16 @@ class GPUListing():
         print(self._message)                    #prints message
 
 #---Functions--------------------------------------
-    #used to create proper URLs for ease later on
-    def genURL(self, url):
-        return "https://www.bestbuy.com{}".format(url)
 
 #---Connection-------------------------------------
 
     #one method to complete handshake and make soup to scrape
-    def prepareSoup(self, url, headers):
-        self.printInstock()
-        self.url = self.genURL(url)     #creates URL to connect
+    def prepareSoup(self, listing, headers):
+        self.gpuDict = listing
+
+        #self.printInstock()
+        self.url = self.gpuDict['url']  #sets the url to scrape
         self.headers = headers          #use headers provided
-        self.listQueue = queue.Queue()  #Instantiates the job queue for threads
 
         self.handshake()                #request connection
         self.makeSoup()                 #create soup from connection to parse
@@ -49,6 +47,8 @@ class GPUListing():
     #request website in while loop
     def handshake(self):
         response = False
+
+        print(threading.current_thread().number + " job: " + self.gpuDict)
 
         while response == False: #while loop to try requesting website
             try: #used incase of errors
@@ -79,6 +79,26 @@ class GPUListing():
                 print("There was an error making soup!\nTry again!\n")
                 time.sleep(self.timeout)
 
+    def checkAvail(self):
+        global avail
+        #Get the dictionary of the current GPU listing
+        gpu = self.gpuDict
+
+        #Fill in the price and availability of the current listing
+        gpu['price'] = self.checkPrice()
+        gpu['in-stock'] = self.checkInstock()
+
+        #Chech if the GPU is in stock
+        if gpu['in-stock'] == True:
+            self.addInstock(gpu)
+            if gpu['name'] == "NVIDIA GeForce RTX 3080 10GB GDDR6X PCI Express 4.0 Graphics Card - Titanium and Black":
+                avail = True
+        else:
+            print(threading.current_thread().number + ": Not In-Stock...\n")
+            time.sleep(self.wait)
+
+        avail = False
+
     #checks page for specific text on price of GPU and then returns it
     def checkPrice(self):
         self.gpuDictPrice = self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
@@ -93,21 +113,12 @@ class GPUListing():
             return True
 
     def addInstock(self, items):
-        if items in self.gpuInstockList:
-            self.printInstock()
-        else:
-            self.gpuInstockList.append(items)
-            self.printInstock()
+        lock = threading.Lock()
 
-    def printInstock(self):
-        self.clearScreen()
-        if len(self._gpuInstockList) > 0:
-            print("Available:\n")
-            for items in self.gpuInstockList:
-                print("{}\n".format(items['name'])
-                     +"Link: {}\n".format(self.genURL(items['url'])))
-        else:
-            pass
+        if items not in self.gpuInstockList:
+            lock.aquire()
+            self.gpuInstockList.append(items)
+            lock.release()
 
     def sleep(self):
         print("Will Continue in 1 minute...\n")
@@ -242,10 +253,28 @@ class GPUListing():
 #Reimplementation of threading class to check the listing of a GPU
 class GPUValidator(threading.Thread):
 
-    def __init__(self, gpuQueue, number):
+    def __init__(self, headers, gpuQueue, number):
         super().__init__()
+        self.listing = GPUListing()
+        self.headers = headers
         self.gpuQueue = gpuQueue
         self.number = number
 
     def run(self):
-        print("Hello, I am ", self.number)
+        print("Starting thread: ", self.number)
+
+        #Get the job from the given queue
+        gpu = self.gpuQueue.get()
+        #Tells that the thread is done with the queue
+        self.gpuQueue.task_done()
+
+        print(self.number, " got job from Queue")
+
+        #Attempt to make connection and retreive html
+        #Should give up control to another thread
+        self.listing.prepareSoup(gpu, self.headers)
+
+        print("Thread: ", self.number, " prepared")
+
+        #Set the price of the gpu if it's available
+        self.listing.checkAvail()
