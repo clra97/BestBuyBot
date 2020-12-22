@@ -35,7 +35,6 @@ class CardScrapper:
 
     #one method to complete handshake and make soup to scrape
     def prepareSoup(self, url, headers):
-        #self.printInstock()
         self.url = self.genURL(url)     #creates URL to connect
         self.headers = headers          #use headers provided
         self.listQueue = queue.Queue()  #Instantiates the job queue for threads
@@ -90,6 +89,7 @@ class CardScrapper:
                 name = link.text                            #capture Name of GPU
                 url = link.get('href')                      #capture URL of GPU
 
+                #If url doesn't exist, skip
                 if url == None:
                     continue
 
@@ -98,12 +98,8 @@ class CardScrapper:
                             'price' : None,                #append Price (Default Value)
                             'in-stock' : False }           #append Avail (Default Value)
 
-                self.appendGPUDict(gpuDict)                        #append Dictionary to List of GPUs
                 self.listQueue.put(gpuDict)                        #Add dictionary to queue
 
-    #append dictionary created from function to list
-    def appendGPUDict(self, gpuDict):
-        self.gpuDictList.append(gpuDict) #appends to list
 
     def printInstock(self):
         self.clearScreen()
@@ -116,10 +112,6 @@ class CardScrapper:
     def sleep(self):
         print("Will Continue in 1 minute...\n")
         time.sleep(60)
-
-    def printFinalDict(self):
-        for items in self.gpuDict.items():
-            print(items)
 
     def clearScreen(self):
         os.system("cls")

@@ -13,7 +13,7 @@ class GPUListing():
         self._timeout = 5               #used for connection functions (waits 10 seconds)
         self._wait = 0                  #used for speed at which we check each link (0 seconds)
 #---Used-to-Scrape---------------------------------
-        self._url = None #url
+        self._url = None                #url
         self._headers = None            #headers for requests
         self._site = None               #response from request
         self._soup = None               #beautifulsoup object
@@ -271,7 +271,7 @@ class GPUValidator(threading.Thread):
             except queue.Empty:
                 #If the queue is empty, the thread exits
                 print("Queue is empty")
-                return 0
+                return 1
 
             #Tells that the thread is done with the queue
             self.gpuQueue.task_done()
