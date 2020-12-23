@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import queue
-import validator as val
+import ListingThread
 
 avail = False
 
@@ -79,7 +79,7 @@ class Scraper:
     # Create worker threads and start them
     def makeWorkers(self):
         for i in range(self.threadLimit):
-            worker = val.GPUValidator(self.listQueue, self.gpuInstockList, self.headers, i)
+            worker = ListingThread.ListingValidator(self.listQueue, self.gpuInstockList, self.headers, i)
             worker.start()
 
     # create GPU Dictionary by scraping text off link
@@ -99,7 +99,7 @@ class Scraper:
                             'price' : None,                #append Price (Default Value)
                             'in-stock' : False }           #append Avail (Default Value)
 
-                self.listQueue.put(gpuDict)                        #Add dictionary to queue
+                self.listQueue.put(gpuDict)                #Add dictionary to queue
 
 
     def printInstock(self):

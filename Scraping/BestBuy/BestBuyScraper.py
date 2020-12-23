@@ -1,5 +1,5 @@
-from Scraper import *
 import threading
+from ..Scraper import *
 
 #Returns the available items from best buy
 def scrape(headers):
