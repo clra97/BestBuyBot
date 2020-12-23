@@ -1,42 +1,34 @@
-import threading
 import time
-from CardScrapper import *
+from Scraper import *
 
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'}
-url = "/site/searchpage.jsp?st=3080"
-avail = False
+item = "3080"
+page = 4
+run = True
+scrape = True
 
-scraper = CardScrapper()
+scraper = Scraper(item)
 
-while avail == False:
+while scrape == True:
+    scraper.genSearchURL(page)
 
-    start_time = time.time()
+    scrape = scraper.prepareSoup(headers)
 
-    #Retreives html from URL
-    scraper.prepareSoup(url, headers)
+    scraper.createItemDict() #threading needed
 
-    #Clears the startup status messages
-    scraper.clearScreen()
+    itemList = scraper.finishItemList() #threading needed
 
-    #Create a dictionary of GPUs from the site
-    scraper.createGPUList()
+    #eventually write properties of each item to a file
+    #track time of writing
+    #check for duplicates
+    #check page for lists when going to the next page
+    for item in itemList:
+        print("Item: {}\n".format(item['name'])
+             +"Price: {}\n".format(item['price'])
+             +"URL: {}\n".format(item['url']))
 
-    # Create worker threads and start them
-    scraper.makeWorkers()
+    scraper.clearDicts()
 
-    #Waits until all threads have completed their task
-    #scraper.listQueue.join()
-    main_thread = threading.current_thread()
-    for t in threading.enumerate():
-        if t is main_thread:
-            continue
-        print("joining ", t.getName())
-        t.join()
+    page += 1
 
-    #Print the in stock GPUs
-    scraper.printInstock()
-
-    print("Program took: ", (time.time() - start_time))
-
-    #Wait to reqeust data again
-    scraper.sleep()
+print("Done Scraping")
