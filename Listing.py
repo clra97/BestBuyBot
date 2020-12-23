@@ -10,19 +10,19 @@ class Listing():
 
     def __init__(self):
 #---Variables--------------------------------------
-        self._timeout = 5               #used for connection functions (waits 10 seconds)
+        self.timeout = 5               #used for connection functions (waits 10 seconds)
 #---Used-to-Scrape---------------------------------
-        self._url = None                #url
-        self._headers = None            #headers for requests
-        self._site = None               #response from request
-        self._soup = None               #beautifulsoup object
+        self.url = None                #url
+        self.headers = None            #headers for requests
+        self.site = None               #response from request
+        self.soup = None               #beautifulsoup object
 #---Used-for-Dictionary----------------------------
-        self._gpuDict = {}              #Dictionary of GPU
+        self.gpuDict = {}              #Dictionary of GPU
 #---Used for threading-----------------------------
-        self._listQueue = None              #Queue used to give jobs to threads
+        self.listQueue = None              #Queue used to give jobs to threads
 #---Used-for-Messages------------------------------
-        self._message = "Card Scraper Ready\n"  #message first displayed
-        print(self._message)                    #prints message
+        self.message = "Card Scraper Ready\n"  #message first displayed
+        print(self.message)                    #prints message
 
 #---Functions--------------------------------------
     #used to create proper URLs for ease later on
@@ -117,129 +117,6 @@ class Listing():
             inStockList.append(items)
 
         lock.release()
-
-#---Getters----------------------------------------
-    @property
-    def timeout(self):
-        return self._timeout
-    @property
-    def headers(self):
-        return self._headers
-    @property
-    def url(self):
-        return self._url
-    @property
-    def site(self):
-        return self._site
-    @property
-    def soup(self):
-        return self._soup
-#---Dictionary-Getters-----------------------------
-    @property
-    def gpuDict(self):
-        return self._gpuDict
-    @property
-    def gpuDictName(self):
-        return self._gpuDictName
-    @property
-    def gpuDictURL(self):
-        return self._gpuDictURL
-    @property
-    def gpuDictPrice(self):
-        return self._gpuDictPrice
-    @property
-    def gpuDictInstock(self):
-        return self._gpuDictInstock
-#---Queue-Getter-----------------------------------
-    @property
-    def listQueue(self):
-        return self._listQueue
-#---Message-Getter---------------------------------
-    @property
-    def message(self):
-        return self._message
-
-#---Setters----------------------------------------
-    @timeout.setter
-    def timeout(self, timeout):
-        self._timeout = timeout
-    @headers.setter
-    def headers(self, headers):
-        self._headers = headers
-    @url.setter
-    def url(self, url):
-        self._url = url
-    @site.setter
-    def site(self, site):
-        self._site = site
-    @soup.setter
-    def soup(self, soup):
-        self._soup = soup
-#---Dictionary-Setters-----------------------------
-    @gpuDict.setter
-    def gpuDict(self, gpuDict):
-        self._gpuDict = gpuDict
-    @gpuDictName.setter
-    def gpuDictName(self, gpuDictName):
-        self._gpuDictName = gpuDictName
-    @gpuDictURL.setter
-    def gpuDictURL(self, gpuDictURL):
-        self._gpuDictURL = gpuDictURL
-    @gpuDictPrice.setter
-    def gpuDictPrice(self, gpuDictPrice):
-        self._gpuDictPrice = gpuDictPrice
-    @gpuDictInstock.setter
-    def gpuDictAvail(self, gpuDictInstock):
-        self._gpuDictAvail = gpuDictInstock
-#---Queue-Setter-----------------------------------
-    @listQueue.setter
-    def listQueue(self, listQueue):
-        self._listQueue = listQueue
-#---Message-Setters--------------------------------
-    @message.setter
-    def message(self, message):
-        self._message = message
-
-#---Deleters---------------------------------------
-    @timeout.deleter
-    def timeout(self):
-        self._timeout = None
-    @headers.deleter
-    def headers(self):
-        self._headers = None
-    @url.deleter
-    def url(self):
-        self._url = None
-    @site.deleter
-    def site(self):
-        self._site = None
-    @soup.deleter
-    def soup(self):
-        self._soup = None
-#---Dictionary-Deleters----------------------------
-    @gpuDict.deleter
-    def gpuDict(self):
-        self._gpuDict = {}
-    @gpuDictName.deleter
-    def gpuDictName(self):
-        self._gpuDictName = None
-    @gpuDictURL.deleter
-    def gpuDictURL(self):
-        self._gpuDictURL = None
-    @gpuDictPrice.deleter
-    def gpuDictPrice(self):
-        self._gpuDictPrice = None
-    @gpuDictInstock.deleter
-    def gpuDictInstock(self):
-        self._gpuDictInstock = False
-#---Queue-Deleter-----------------------------------
-    @listQueue.deleter
-    def listQueue(self):
-        self._listQueue = None
-#---Message-Deleters-------------------------------
-    @message.deleter
-    def message(self):
-        self._message = "No Message"
 
 #Reimplementation of threading class to check the listing of a GPU
 class GPUValidator(threading.Thread):

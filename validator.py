@@ -8,11 +8,11 @@ class GPUListing(Listing):
 
     #checks page for specific text on price of GPU and then returns it
     def checkPrice(self):
-        return super().soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
+        return self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
 
     #checks if specific card
     def checkInstock(self):
-        button = super().soup.find('div', 'fulfillment-add-to-cart-button').find('button').text
+        button = self.soup.find('div', 'fulfillment-add-to-cart-button').find('button').text
 
         if button == 'Sold Out' or button == 'Coming Soon':
             return False

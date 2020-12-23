@@ -33,7 +33,7 @@ def scrape(headers):
     print("Program took: ", (time.time() - start_time))
 
     #Print the in stock GPUs
-    return scraper.gpuDictList
+    return scraper.gpuInstockList
 
 class BestBuyScraper(Scraper):
 
@@ -42,7 +42,7 @@ class BestBuyScraper(Scraper):
 
     # create GPU Dictionary by scraping text off link
     def createGPUList(self):
-        for item in super().soup.find_all('li', "sku-item"):               #find List of GPUs on search
+        for item in self.soup.find_all('li', "sku-item"):               #find List of GPUs on search
             for link in item.find(class_='sku-header'):                 #once found go through each GPU
 
                 name = link.text                            #capture Name of GPU
@@ -57,9 +57,4 @@ class BestBuyScraper(Scraper):
                             'price' : None,                #append Price (Default Value)
                             'in-stock' : False }           #append Avail (Default Value)
 
-                super().listQueue.put(gpuDict)                        #Add dictionary to queue
-
-#Getters-----------------------------------------------
-    @property
-    def gpuDictList(self):
-        return super().gpuDictList
+                self.listQueue.put(gpuDict)                        #Add dictionary to queue
