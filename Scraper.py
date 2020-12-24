@@ -1,13 +1,14 @@
-import os
 import requests
-from bs4 import BeautifulSoup
 import time
+import os
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 
 class Scraper:
 
     def __init__(self, item):
 #---Variables--------------------------------------
-        self._timeout = 5               #used for connection functions (waits 10 seconds)
+        self._timeout = 30              #used for connection functions (waits 10 seconds)
         self._wait = 1                  #used for speed at which we check each link (0 seconds)
 #---Used-to-Scrape---------------------------------
         self._item = item                #item being searched
@@ -17,7 +18,6 @@ class Scraper:
         self._soup = None               #beautifulsoup object
 #---Used-for-Dictionary----------------------------
         self._itemDictList = []          #List of GPU Dictionaries
-        self._itemDict = {}              #Dictionary of GPU
 #---Used-for-Messages------------------------------
         self._message = "Card Scraper Ready\n"  #message first displayed
         print(self._message)                    #prints message
@@ -50,30 +50,30 @@ class Scraper:
             try:                                                    #used incase of errors
                 self.site = requests.get(self.url,                  #url
                                     headers=self.headers,           #headers
-                                        timeout=self.timeout)       #timeout (10 seconds)
+                                    timeout=self.timeout)           #timeout (10 seconds)
                 response = True
             except:
                 print("{} - There was an error connecting!\nTry again!\n".format(self.site)) #prints status code
                 time.sleep(self.timeout)
 
         if str(self.site) == "<Response [200]>":
-            print("{} - Successful!\n".format(self.site))           #status code: 200 = good
+            #print("{} - Successful!\n".format(self.site))           #status code: 200 = good
             return True
         else:
-            print("{} - No Items to scrape!\n".format(self.site))   #status code other than 200 = bad
+            #print("{} - No Items to scrape!\n".format(self.site))   #status code other than 200 = bad
             return False
     #create beautifulsoup with try and except
     def makeSoup(self):
         response = False #used to break loop to connect
 
-        print("Creating Soup...\n") #message to let user know processing
+        #print("Creating Soup...\n") #message to let user know processing
 
         while response == False: #while loop to try creating soup
             try: #used in case of errors
                 self.soup = BeautifulSoup(self.site.content, #creates BeautifulSoup Object from request
                                         'lxml')             #parses with lxml library (Fastest)
 
-                print("Successful!\n")
+                #print("Successful!\n")
 
                 response = True #will break loop
             except:
@@ -84,7 +84,7 @@ class Scraper:
 
 #---create-gpuDict---------------------------------
     #create GPU Dictionary by scraping text off link
-    def createItemDict(self):
+    def searchDict(self):
         for item in self.soup.find_all('li', "sku-item"):                   #find List of GPUs on search
             for link in item.find(class_='sku-header'):                     #once found go through each GPU
 
@@ -94,24 +94,41 @@ class Scraper:
                 if url == None:
                     pass
                 else:
-                    self.itemDict = {'name' : name,                         #append name
-                                    'url' : self.genItemURL(url),           #append URL
-                                    'price' : None,                         #append Price (Default Value) 
-                                    'in-stock' : None }                     #append Avail (Default Value)
+                    itemDict = {'name' : name,                          #append name
+                                'url' : self.genItemURL(url),           #append URL
+                                'price' : None,                         #append Price (Default Value) 
+                                'in-stock' : None}                      #append Avail (Default Value)
 
-                    self.itemDictList.append(self.itemDict)                 #append Dictionary to List of GPUs
+                    self.itemDictList.append(itemDict)                  #append Dictionary to List of GPUs
                     
-    def finishItemList(self):
-        for items in self.itemDictList:
-            name = items['name']
-            url = items['url']
+    def itemProperties(self, items):
+        name = items['name']
+        url = items['url']
+        
+        self.prepareSoup(self.headers)
 
-            self.prepareSoup(self.headers)
+        items['price'] = self.checkPrice()
+        items['in-stock'] = self.checkInstock()
+        
+        return items
 
-            items['price'] = self.checkPrice()
-            items['in-stock'] = self.checkInstock()
+    def itemDict(self):
+        futuresList = []
+        results = []
 
-        return self._itemDictList
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            for items in self.itemDictList:
+                futures = executor.submit(self.itemProperties, items)
+                futuresList.append(futures)
+                
+            for future in futuresList:
+                try:
+                    result = future.result(timeout=self.timeout)
+                    results.append(result)
+                except Exception:
+                    results.append(None)
+        return results
+
     #checks page for specific text on price of GPU and then returns it
     def checkPrice(self):
         price = self.soup.find('div', 'priceView-hero-price priceView-customer-price').find('span').text
@@ -134,7 +151,6 @@ class Scraper:
 
     def clearDicts(self):
         self.itemDictList.clear()
-        self.itemDict.clear()
 
 #---Getters----------------------------------------
     @property
@@ -162,12 +178,6 @@ class Scraper:
     @property
     def itemDictList(self):
         return self._itemDictList
-    @property
-    def itemDict(self):
-        return self._itemDict
-    @property
-    def itemInstockList(self):
-        return self._itemInstockList
 #---Message-Getter---------------------------------
     @property
     def message(self):
@@ -198,12 +208,6 @@ class Scraper:
     @itemDictList.setter
     def itemDictList(self, itemDictList):
         self._itemDictList = itemDictList
-    @itemDict.setter
-    def itemDict(self, itemDict):
-        self._itemDict = itemDict
-    @itemInstockList.setter
-    def itemInstockSet(self, itemInstockList):
-        self._itemInstockList = itemInstockList
 #---Message-Setters--------------------------------
     @message.setter
     def message(self, message):
@@ -234,12 +238,6 @@ class Scraper:
     @itemDictList.deleter
     def itemDictList(self):
         self._itemDictList = itemDictList
-    @itemDict.deleter
-    def itemDict(self):
-        self._itemDict = {}
-    @itemInstockList.deleter
-    def itemInstockList(self):
-        self._itemInstockList = []
 #---Message-Deleters-------------------------------
     @message.deleter
     def message(self):
